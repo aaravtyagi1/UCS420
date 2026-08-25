@@ -103,3 +103,68 @@ print("Digit", digit1, "-> Category:", c1)
 print("Digit", digit2, "-> Category:", c2)
 
 print("\nNumber of FAQ entries:", len(df))
+
+
+import pandas as pd
+
+def score(q, df):
+    qw = set(q.lower().split())
+    r = []
+
+    for i, x in df.iterrows():
+        w = set(str(x["question"]).lower().split()) | {
+            k.strip().lower() for k in str(x["keywords"]).split(",")
+        }
+        s = len(qw & w)
+        if s:
+            r.append((i, s))
+
+    r.sort(key=lambda x: x[1], reverse=True)
+    return pd.DataFrame(
+        [df.loc[i].assign(confidence=s) for i, s in r]
+    )
+
+q = input("Query: ")
+print(score(q, df))
+
+def same_category(c, df):
+    return df[df["category"].str.lower() == c.lower()]
+
+c = df.iloc[0]["category"]
+print(same_category(c, df))
+
+i = 0
+print(df.loc[i])
+k = input("New keyword: ").strip()
+
+if k:
+    old = str(df.loc[i, "keywords"])
+    df.loc[i, "keywords"] = k if old == "nan" else old + ", " + k
+
+rn = "YOUR_ROLL_NUMBER"
+df.to_csv(rn + "_faq_data.csv", index=False)
+
+print(df.groupby("category").size())
+
+def score2(q, df):
+    r = []
+
+    for i, x in df.iterrows():
+        w = set(str(x["question"]).lower().split()) | {
+            k.strip().lower() for k in str(x["keywords"]).split(",")
+        }
+        s = len(set(q.lower().split()) & w)
+        if s:
+            r.append((i, s))
+
+    if not r:
+        print("No match")
+        return
+
+    m = max(s for i, s in r)
+    b = [i for i, s in r if s == m]
+
+    print(df.loc[b].assign(confidence=m))
+
+score2("fee", df)
+score2("payment method", df)
